@@ -32,3 +32,10 @@ output/
 /!public/dist/README.md
 
 .VSCodeCounter
+
+# Local deploy / test environment (not part of upstream)
+.dockerignore
+Dockerfile.local
+__debug_bin*
+/openlist-test-data/
+/scripts/
