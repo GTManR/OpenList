@@ -14,9 +14,10 @@ import (
 )
 
 type LoginReq struct {
-	Username string `json:"username" binding:"required"`
-	Password string `json:"password"`
-	OtpCode  string `json:"otp_code"`
+	Username       string `json:"username" binding:"required"`
+	Password       string `json:"password"`
+	OtpCode        string `json:"otp_code"`
+	TurnstileToken string `json:"turnstile_token"`
 }
 
 // Login Deprecated
@@ -40,7 +41,29 @@ func LoginHash(c *gin.Context) {
 	loginHash(c, &req)
 }
 
+func verifyTurnstile(c *gin.Context, req *LoginReq) bool {
+	if !common.TurnstileRequired() {
+		return true
+	}
+	// Skip on 2FA second step; password was already validated on the first request.
+	if req.OtpCode != "" {
+		return true
+	}
+	if req.TurnstileToken == "" {
+		common.ErrorStrResp(c, "Turnstile verification required", 400)
+		return false
+	}
+	if !common.VerifyTurnstileToken(req.TurnstileToken, c.ClientIP()) {
+		common.ErrorStrResp(c, "Turnstile verification failed", 400)
+		return false
+	}
+	return true
+}
+
 func loginHash(c *gin.Context, req *LoginReq) {
+	if !verifyTurnstile(c, req) {
+		return
+	}
 	// check count of login
 	ip := c.ClientIP()
 	count, ok := model.LoginCache.Get(ip)

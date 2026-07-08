@@ -127,6 +127,10 @@ const (
 	LdapDefaultDir        = "ldap_default_dir"
 	LdapLoginTips         = "ldap_login_tips"
 
+	// turnstile
+	TurnstileSiteKey   = "turnstile_site_key"
+	TurnstileSecretKey = "turnstile_secret_key"
+
 	// s3
 	S3Buckets         = "s3_buckets"
 	S3AccessKeyId     = "s3_access_key_id"

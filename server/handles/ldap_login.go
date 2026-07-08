@@ -21,6 +21,9 @@ func LoginLdap(c *gin.Context) {
 		common.ErrorStrResp(c, "ldap is not enabled", 403)
 		return
 	}
+	if !verifyTurnstile(c, &req) {
+		return
+	}
 	user, err := op.GetUserByName(req.Username)
 	if err == nil && !user.AllowLdap {
 		common.ErrorStrResp(c, "login via ldap is not allowed", 403)
