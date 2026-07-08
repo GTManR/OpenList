@@ -41,19 +41,24 @@ func LoginHash(c *gin.Context) {
 	loginHash(c, &req)
 }
 
-func verifyTurnstile(c *gin.Context, req *LoginReq) bool {
+func verifyTurnstile(c *gin.Context, req *LoginReq, ip string, count int) bool {
 	if !common.TurnstileRequired() {
 		return true
 	}
-	// Skip on 2FA second step; password was already validated on the first request.
-	if req.OtpCode != "" {
-		return true
-	}
+	// Require a fresh Turnstile token on every login request, including the
+	// 2FA second step (the frontend keeps the widget alive and issues a new
+	// token for it). Returning a uniform 400 when the token is missing avoids
+	// leaking which accounts have 2FA enabled, and always requiring the token
+	// prevents bypassing Turnstile by simply sending an otp_code.
 	if req.TurnstileToken == "" {
 		common.ErrorStrResp(c, "Turnstile verification required", 400)
 		return false
 	}
 	if !common.VerifyTurnstileToken(req.TurnstileToken, c.ClientIP()) {
+		// Count failed verifications toward the per-IP limit so a flood of
+		// bogus tokens eventually gets locked out instead of endlessly
+		// triggering remote siteverify calls.
+		model.LoginCache.Set(ip, count+1)
 		common.ErrorStrResp(c, "Turnstile verification failed", 400)
 		return false
 	}
@@ -61,15 +66,16 @@ func verifyTurnstile(c *gin.Context, req *LoginReq) bool {
 }
 
 func loginHash(c *gin.Context, req *LoginReq) {
-	if !verifyTurnstile(c, req) {
-		return
-	}
-	// check count of login
+	// check count of login first (cheap, local) so an already-locked-out IP
+	// can't be used to flood the remote Turnstile siteverify API.
 	ip := c.ClientIP()
 	count, ok := model.LoginCache.Get(ip)
 	if ok && count >= model.DefaultMaxAuthRetries {
 		common.ErrorStrResp(c, model.TooManyAttempts, 429)
 		model.LoginCache.Expire(ip, model.DefaultLockDuration)
+		return
+	}
+	if !verifyTurnstile(c, req, ip, count) {
 		return
 	}
 	// check username

@@ -21,21 +21,22 @@ func LoginLdap(c *gin.Context) {
 		common.ErrorStrResp(c, "ldap is not enabled", 403)
 		return
 	}
-	if !verifyTurnstile(c, &req) {
-		return
-	}
-	user, err := op.GetUserByName(req.Username)
-	if err == nil && !user.AllowLdap {
-		common.ErrorStrResp(c, "login via ldap is not allowed", 403)
-		return
-	}
 
-	// check count of login
+	// check count of login first (cheap, local) so an already-locked-out IP
+	// can't be used to flood the remote Turnstile siteverify API.
 	ip := c.ClientIP()
 	count, ok := model.LoginCache.Get(ip)
 	if ok && count >= model.DefaultMaxAuthRetries {
 		common.ErrorStrResp(c, "Too many unsuccessful sign-in attempts have been made using an incorrect username or password, Try again later.", 429)
 		model.LoginCache.Expire(ip, model.DefaultLockDuration)
+		return
+	}
+	if !verifyTurnstile(c, &req, ip, count) {
+		return
+	}
+	user, err := op.GetUserByName(req.Username)
+	if err == nil && !user.AllowLdap {
+		common.ErrorStrResp(c, "login via ldap is not allowed", 403)
 		return
 	}
 

@@ -21,15 +21,17 @@ import (
 
 type ListReq struct {
 	model.PageReq
-	Path     string `json:"path" form:"path"`
-	Password string `json:"password" form:"password"`
-	Refresh  bool   `json:"refresh"`
+	Path           string `json:"path" form:"path"`
+	Password       string `json:"password" form:"password"`
+	TurnstileToken string `json:"turnstile_token" form:"turnstile_token"`
+	Refresh        bool   `json:"refresh"`
 }
 
 type DirReq struct {
-	Path      string `json:"path" form:"path"`
-	Password  string `json:"password" form:"password"`
-	ForceRoot bool   `json:"force_root" form:"force_root"`
+	Path           string `json:"path" form:"path"`
+	Password       string `json:"password" form:"password"`
+	TurnstileToken string `json:"turnstile_token" form:"turnstile_token"`
+	ForceRoot      bool   `json:"force_root" form:"force_root"`
 }
 
 type ObjResp struct {
@@ -89,8 +91,7 @@ func FsList(c *gin.Context, req *ListReq, user *model.User) {
 		return
 	}
 	common.GinAppendValues(c, conf.MetaKey, meta)
-	if !common.CanAccess(user, meta, reqPath, req.Password) {
-		common.ErrorStrResp(c, "password is incorrect or you have no permission", 403)
+	if !common.CheckMetaAccess(c, user, meta, reqPath, req.Password, req.TurnstileToken) {
 		return
 	}
 	canWriteContentAtPath := common.CanWrite(user, meta, reqPath) && (user.CanWriteContent() || common.CanWriteContentBypassUserPerms(meta, reqPath))
@@ -153,8 +154,7 @@ func FsDirs(c *gin.Context) {
 		return
 	}
 	common.GinAppendValues(c, conf.MetaKey, meta)
-	if !common.CanAccess(user, meta, reqPath, req.Password) {
-		common.ErrorStrResp(c, "password is incorrect or you have no permission", 403)
+	if !common.CheckMetaAccess(c, user, meta, reqPath, req.Password, req.TurnstileToken) {
 		return
 	}
 	objs, err := fs.List(c.Request.Context(), reqPath, &fs.ListArgs{})
@@ -248,8 +248,9 @@ func toObjsResp(objs []model.Obj, parent string, encrypt bool) []ObjResp {
 }
 
 type FsGetReq struct {
-	Path     string `json:"path" form:"path"`
-	Password string `json:"password" form:"password"`
+	Path           string `json:"path" form:"path"`
+	Password       string `json:"password" form:"password"`
+	TurnstileToken string `json:"turnstile_token" form:"turnstile_token"`
 }
 
 type FsGetResp struct {
@@ -292,8 +293,7 @@ func FsGet(c *gin.Context, req *FsGetReq, user *model.User) {
 		return
 	}
 	common.GinAppendValues(c, conf.MetaKey, meta)
-	if !common.CanAccess(user, meta, reqPath, req.Password) {
-		common.ErrorStrResp(c, "password is incorrect or you have no permission", 403)
+	if !common.CheckMetaAccess(c, user, meta, reqPath, req.Password, req.TurnstileToken) {
 		return
 	}
 	obj, err := fs.Get(c.Request.Context(), reqPath, &fs.GetArgs{
@@ -394,7 +394,8 @@ func filterRelated(objs []model.Obj, obj model.Obj) []model.Obj {
 
 type FsOtherReq struct {
 	model.FsOtherArgs
-	Password string `json:"password" form:"password"`
+	Password       string `json:"password" form:"password"`
+	TurnstileToken string `json:"turnstile_token" form:"turnstile_token"`
 }
 
 func FsOther(c *gin.Context) {
@@ -416,8 +417,7 @@ func FsOther(c *gin.Context) {
 		return
 	}
 	common.GinAppendValues(c, conf.MetaKey, meta)
-	if !common.CanAccess(user, meta, req.Path, req.Password) {
-		common.ErrorStrResp(c, "password is incorrect or you have no permission", 403)
+	if !common.CheckMetaAccess(c, user, meta, req.Path, req.Password, req.TurnstileToken) {
 		return
 	}
 	res, err := fs.Other(c.Request.Context(), req.FsOtherArgs)

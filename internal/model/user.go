@@ -28,9 +28,15 @@ const (
 	TooManyAttempts           = "Too many unsuccessful sign-in attempts have been made using an incorrect username or password, Try again later."
 	GuestCannotUpdateProfile  = "Guest user can not update profile"
 	GuestCannotGenerate2FA    = "Guest user can not generate 2FA code"
+	TooManyPasswordAttempts   = "Too many incorrect password attempts, please complete the verification"
 )
 
 var LoginCache = cache.NewMemCache[int]()
+
+// MetaPassCache counts failed meta (folder) password attempts per client IP so a
+// Turnstile challenge can be required after too many failures to throttle
+// brute-force attempts against password-protected folders.
+var MetaPassCache = cache.NewMemCache[int]()
 
 var (
 	DefaultLockDuration   = time.Minute * 5

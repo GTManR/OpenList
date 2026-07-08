@@ -77,6 +77,24 @@ func CanAccess(user *model.User, meta *model.Meta, reqPath string, password stri
 	return meta.Password == password
 }
 
+// metaPasswordRequired reports whether accessing reqPath is gated by a meta
+// password for this user (i.e. a correct password is the only thing standing
+// between the user and access). It mirrors the password branch of CanAccess and
+// is used to decide when to apply Turnstile brute-force throttling. Hide checks
+// are intentionally omitted here; CanAccess remains the authoritative decision.
+func metaPasswordRequired(user *model.User, meta *model.Meta, reqPath string) bool {
+	if user.CanAccessWithoutPassword() {
+		return false
+	}
+	if meta == nil || meta.Password == "" {
+		return false
+	}
+	if !CanRead(user, meta, reqPath) {
+		return false
+	}
+	return MetaCoversPath(meta.Path, reqPath, meta.PSub)
+}
+
 func MetaCoversPath(metaPath, reqPath string, applyToSubFolder bool) bool {
 	if utils.PathEqual(metaPath, reqPath) {
 		return true
