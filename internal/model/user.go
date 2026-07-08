@@ -28,7 +28,7 @@ const (
 	TooManyAttempts           = "Too many unsuccessful sign-in attempts have been made using an incorrect username or password, Try again later."
 	GuestCannotUpdateProfile  = "Guest user can not update profile"
 	GuestCannotGenerate2FA    = "Guest user can not generate 2FA code"
-	TooManyPasswordAttempts   = "Too many incorrect password attempts, please complete the verification"
+	TooManyPasswordAttempts   = "密码错误次数过多，请先完成验证码验证"
 )
 
 var LoginCache = cache.NewMemCache[int]()
@@ -37,6 +37,15 @@ var LoginCache = cache.NewMemCache[int]()
 // Turnstile challenge can be required after too many failures to throttle
 // brute-force attempts against password-protected folders.
 var MetaPassCache = cache.NewMemCache[int]()
+
+// MetaPassVerified remembers that an IP has already completed Turnstile for a
+// given meta path with a specific password, so subsequent browsing with the
+// cached password does not force a new captcha on every request.
+var MetaPassVerified = cache.NewMemCache[string]()
+
+// MetaPassVerifiedTTL is how long a successful folder-password unlock stays
+// captcha-free for the same IP + meta path + password.
+var MetaPassVerifiedTTL = time.Hour
 
 var (
 	DefaultLockDuration   = time.Minute * 5

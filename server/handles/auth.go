@@ -51,7 +51,7 @@ func verifyTurnstile(c *gin.Context, req *LoginReq, ip string, count int) bool {
 	// leaking which accounts have 2FA enabled, and always requiring the token
 	// prevents bypassing Turnstile by simply sending an otp_code.
 	if req.TurnstileToken == "" {
-		common.ErrorStrResp(c, "Turnstile verification required", 400)
+		common.ErrorStrResp(c, "请先完成验证码验证", 400)
 		return false
 	}
 	if !common.VerifyTurnstileToken(req.TurnstileToken, c.ClientIP()) {
@@ -59,7 +59,7 @@ func verifyTurnstile(c *gin.Context, req *LoginReq, ip string, count int) bool {
 		// bogus tokens eventually gets locked out instead of endlessly
 		// triggering remote siteverify calls.
 		model.LoginCache.Set(ip, count+1)
-		common.ErrorStrResp(c, "Turnstile verification failed", 400)
+		common.ErrorStrResp(c, "验证码验证失败", 400)
 		return false
 	}
 	return true
