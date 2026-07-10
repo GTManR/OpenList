@@ -3,6 +3,10 @@
 output/
 /dist/
 
+# Local go build output (default name when building from repo root)
+/OpenList
+/openlist
+
 # Binaries for programs and plugins
 *.exe
 *.exe~
@@ -39,3 +43,4 @@ Dockerfile.local
 __debug_bin*
 /openlist-test-data/
 /scripts/
+openlist.code-workspace
