@@ -14,6 +14,7 @@ import (
 	"sync"
 
 	"github.com/OpenListTeam/OpenList/v4/drivers/base"
+	"github.com/OpenListTeam/OpenList/v4/internal/abuse"
 	"github.com/OpenListTeam/OpenList/v4/internal/conf"
 	"github.com/OpenListTeam/OpenList/v4/internal/model"
 	"github.com/OpenListTeam/OpenList/v4/internal/op"
@@ -113,9 +114,10 @@ func (d *FtpMainDriver) ClientDisconnected(cc ftpserver.ClientContext) {
 }
 
 func (d *FtpMainDriver) AuthUser(cc ftpserver.ClientContext, user, pass string) (ftpserver.ClientDriver, error) {
-	ip := cc.RemoteAddr().String()
+	ip := abuse.IPFromAddr(cc.RemoteAddr().String())
 	count, ok := model.LoginCache.Get(ip)
 	if ok && count >= model.DefaultMaxAuthRetries {
+		abuse.OnProtocolAuthLockout(ip, "ftp")
 		model.LoginCache.Expire(ip, model.DefaultLockDuration)
 		return nil, errors.New("Too many unsuccessful sign-in attempts have been made using an incorrect username or password, Try again later.")
 	}
@@ -138,11 +140,17 @@ func (d *FtpMainDriver) AuthUser(cc ftpserver.ClientContext, user, pass string) 
 		}
 		if err != nil {
 			model.LoginCache.Set(ip, count+1)
+			if count+1 >= model.DefaultMaxAuthRetries {
+				abuse.OnProtocolAuthLockout(ip, "ftp")
+			}
 			return nil, err
 		}
 	}
 	if userObj.Disabled || !userObj.CanFTPAccess() {
 		model.LoginCache.Set(ip, count+1)
+		if count+1 >= model.DefaultMaxAuthRetries {
+			abuse.OnProtocolAuthLockout(ip, "ftp")
+		}
 		return nil, errors.New("user is not allowed to access via FTP")
 	}
 	model.LoginCache.Del(ip)

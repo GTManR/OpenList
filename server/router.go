@@ -36,6 +36,7 @@ func Init(e *gin.Engine) {
 	g.GET("/i/:link_name", handles.Plist)
 	common.SecretKey = []byte(conf.Conf.JwtSecret)
 	g.Use(middlewares.StoragesLoaded)
+	g.Use(middlewares.AbuseScanTrack())
 	if conf.Conf.MaxConnections > 0 {
 		g.Use(middlewares.MaxAllowed(conf.Conf.MaxConnections))
 	}
@@ -44,18 +45,19 @@ func Init(e *gin.Engine) {
 	MCP(g)
 
 	downloadLimiter := middlewares.DownloadRateLimiter(stream.ClientDownloadLimit)
-	signCheck := middlewares.Down(sign.Verify)
+	signCheck := middlewares.DownWithOpts(sign.Verify, middlewares.DownOpts{TrackDownload: true})
 	g.GET("/d/*path", middlewares.PathParse, signCheck, downloadLimiter, handles.Down)
 	g.GET("/p/*path", middlewares.PathParse, signCheck, downloadLimiter, handles.Proxy)
 	g.HEAD("/d/*path", middlewares.PathParse, signCheck, handles.Down)
 	g.HEAD("/p/*path", middlewares.PathParse, signCheck, handles.Proxy)
-	archiveSignCheck := middlewares.Down(sign.VerifyArchive)
+	archiveSignCheck := middlewares.DownWithOpts(sign.VerifyArchive, middlewares.DownOpts{TrackDownload: true})
+	archiveSignCheckNoTrack := middlewares.DownWithOpts(sign.VerifyArchive, middlewares.DownOpts{TrackDownload: false})
 	g.GET("/ad/*path", middlewares.PathParse, archiveSignCheck, downloadLimiter, handles.ArchiveDown)
 	g.GET("/ap/*path", middlewares.PathParse, archiveSignCheck, downloadLimiter, handles.ArchiveProxy)
-	g.GET("/ae/*path", middlewares.PathParse, archiveSignCheck, downloadLimiter, handles.ArchiveInternalExtract)
+	g.GET("/ae/*path", middlewares.PathParse, archiveSignCheckNoTrack, downloadLimiter, handles.ArchiveInternalExtract)
 	g.HEAD("/ad/*path", middlewares.PathParse, archiveSignCheck, handles.ArchiveDown)
 	g.HEAD("/ap/*path", middlewares.PathParse, archiveSignCheck, handles.ArchiveProxy)
-	g.HEAD("/ae/*path", middlewares.PathParse, archiveSignCheck, handles.ArchiveInternalExtract)
+	g.HEAD("/ae/*path", middlewares.PathParse, archiveSignCheckNoTrack, handles.ArchiveInternalExtract)
 
 	g.GET("/sd/:sid", middlewares.EmptyPathParse, middlewares.SharingIdParse, downloadLimiter, handles.SharingDown)
 	g.GET("/sd/:sid/*path", middlewares.PathParse, middlewares.SharingIdParse, downloadLimiter, handles.SharingDown)

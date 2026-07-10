@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"image/png"
 
+	"github.com/OpenListTeam/OpenList/v4/internal/abuse"
 	"github.com/OpenListTeam/OpenList/v4/internal/conf"
 	"github.com/OpenListTeam/OpenList/v4/internal/model"
 	"github.com/OpenListTeam/OpenList/v4/internal/op"
@@ -54,11 +55,15 @@ func verifyTurnstile(c *gin.Context, req *LoginReq, ip string, count int) bool {
 		common.ErrorStrResp(c, "请先完成验证码验证", 400)
 		return false
 	}
-	if !common.VerifyTurnstileToken(req.TurnstileToken, c.ClientIP()) {
+	if !common.VerifyTurnstileToken(req.TurnstileToken, abuse.IPFromGin(c)) {
 		// Count failed verifications toward the per-IP limit so a flood of
 		// bogus tokens eventually gets locked out instead of endlessly
 		// triggering remote siteverify calls.
 		model.LoginCache.Set(ip, count+1)
+		abuse.Record(ip, abuse.BehaviorTurnstileFail)
+		if count+1 >= model.DefaultMaxAuthRetries {
+			abuse.OnAuthLockout(ip, "turnstile_login")
+		}
 		common.ErrorStrResp(c, "验证码验证失败", 400)
 		return false
 	}
@@ -68,9 +73,10 @@ func verifyTurnstile(c *gin.Context, req *LoginReq, ip string, count int) bool {
 func loginHash(c *gin.Context, req *LoginReq) {
 	// check count of login first (cheap, local) so an already-locked-out IP
 	// can't be used to flood the remote Turnstile siteverify API.
-	ip := c.ClientIP()
+	ip := abuse.IPFromGin(c)
 	count, ok := model.LoginCache.Get(ip)
 	if ok && count >= model.DefaultMaxAuthRetries {
+		abuse.OnAuthLockout(ip, "http_login")
 		common.ErrorStrResp(c, model.TooManyAttempts, 429)
 		model.LoginCache.Expire(ip, model.DefaultLockDuration)
 		return
@@ -83,12 +89,18 @@ func loginHash(c *gin.Context, req *LoginReq) {
 	if err != nil {
 		common.ErrorStrResp(c, model.InvalidUsernameOrPassword, 401)
 		model.LoginCache.Set(ip, count+1)
+		if count+1 >= model.DefaultMaxAuthRetries {
+			abuse.OnAuthLockout(ip, "http_login")
+		}
 		return
 	}
 	// validate password hash
 	if err := user.ValidatePwdStaticHash(req.Password); err != nil {
 		common.ErrorStrResp(c, model.InvalidUsernameOrPassword, 401)
 		model.LoginCache.Set(ip, count+1)
+		if count+1 >= model.DefaultMaxAuthRetries {
+			abuse.OnAuthLockout(ip, "http_login")
+		}
 		return
 	}
 	// check 2FA
@@ -97,6 +109,9 @@ func loginHash(c *gin.Context, req *LoginReq) {
 			// 402 - need opt
 			common.ErrorStrResp(c, model.Invalid2FACode, 402)
 			model.LoginCache.Set(ip, count+1)
+			if count+1 >= model.DefaultMaxAuthRetries {
+				abuse.OnAuthLockout(ip, "http_login")
+			}
 			return
 		}
 	}

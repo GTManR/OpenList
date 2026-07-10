@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/OpenListTeam/OpenList/v4/drivers/base"
+	"github.com/OpenListTeam/OpenList/v4/internal/abuse"
 	"github.com/OpenListTeam/OpenList/v4/internal/conf"
 	"github.com/OpenListTeam/OpenList/v4/internal/model"
 	"github.com/OpenListTeam/OpenList/v4/internal/op"
@@ -93,9 +94,10 @@ func (d *SftpDriver) NoClientAuth(conn ssh.ConnMetadata) (*ssh.Permissions, erro
 }
 
 func (d *SftpDriver) PasswordAuth(conn ssh.ConnMetadata, password []byte) (*ssh.Permissions, error) {
-	ip := conn.RemoteAddr().String()
+	ip := abuse.IPFromAddr(conn.RemoteAddr().String())
 	count, ok := model.LoginCache.Get(ip)
 	if ok && count >= model.DefaultMaxAuthRetries {
+		abuse.OnProtocolAuthLockout(ip, "sftp")
 		model.LoginCache.Expire(ip, model.DefaultLockDuration)
 		return nil, errors.New("Too many unsuccessful sign-in attempts have been made using an incorrect username or password, Try again later.")
 	}
@@ -111,10 +113,16 @@ func (d *SftpDriver) PasswordAuth(conn ssh.ConnMetadata, password []byte) (*ssh.
 	}
 	if err != nil {
 		model.LoginCache.Set(ip, count+1)
+		if count+1 >= model.DefaultMaxAuthRetries {
+			abuse.OnProtocolAuthLockout(ip, "sftp")
+		}
 		return nil, err
 	}
 	if userObj.Disabled || !userObj.CanFTPAccess() {
 		model.LoginCache.Set(ip, count+1)
+		if count+1 >= model.DefaultMaxAuthRetries {
+			abuse.OnProtocolAuthLockout(ip, "sftp")
+		}
 		return nil, errors.New("user is not allowed to access via SFTP")
 	}
 	model.LoginCache.Del(ip)

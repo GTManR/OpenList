@@ -3,6 +3,7 @@ package middlewares
 import (
 	"crypto/subtle"
 
+	"github.com/OpenListTeam/OpenList/v4/internal/abuse"
 	"github.com/OpenListTeam/OpenList/v4/internal/conf"
 	"github.com/OpenListTeam/OpenList/v4/internal/model"
 	"github.com/OpenListTeam/OpenList/v4/internal/op"
@@ -37,6 +38,7 @@ func Auth(allowDisabledGuest bool) func(c *gin.Context) {
 				return
 			}
 			if !allowDisabledGuest && guest.Disabled {
+				abuse.Record(abuse.IPFromGin(c), abuse.BehaviorGuestDisabled)
 				common.ErrorStrResp(c, "Guest user is disabled, login please", 401)
 				c.Abort()
 				return

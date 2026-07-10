@@ -3,6 +3,7 @@ package common
 import (
 	"time"
 
+	"github.com/OpenListTeam/OpenList/v4/internal/abuse"
 	"github.com/OpenListTeam/OpenList/v4/internal/conf"
 	"github.com/OpenListTeam/OpenList/v4/internal/model"
 	"github.com/OpenListTeam/OpenList/v4/internal/setting"
@@ -67,7 +68,7 @@ func CheckMetaAccess(c *gin.Context, user *model.User, meta *model.Meta, reqPath
 		return true
 	}
 	gated := metaPasswordRequired(user, meta, reqPath)
-	ip := c.ClientIP()
+	ip := abuse.IPFromGin(c)
 	if gated {
 		verifiedKey := ip + "|" + meta.Path
 		stored, hasVerified := model.MetaPassVerified.Get(verifiedKey)
@@ -77,6 +78,7 @@ func CheckMetaAccess(c *gin.Context, user *model.User, meta *model.Meta, reqPath
 				count, _ := model.MetaPassCache.Get(ip)
 				model.MetaPassCache.Set(ip, count+1)
 				model.MetaPassCache.Expire(ip, model.DefaultLockDuration)
+				abuse.Record(ip, abuse.BehaviorTurnstileFail)
 				ErrorStrResp(c, "请先完成验证码验证", 403)
 				return false
 			}

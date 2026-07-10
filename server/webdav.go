@@ -6,6 +6,7 @@ import (
 	"path"
 	"strings"
 
+	"github.com/OpenListTeam/OpenList/v4/internal/abuse"
 	"github.com/OpenListTeam/OpenList/v4/internal/conf"
 	"github.com/OpenListTeam/OpenList/v4/internal/model"
 	"github.com/OpenListTeam/OpenList/v4/internal/op"
@@ -49,10 +50,11 @@ func ServeWebDAV(c *gin.Context) {
 
 func WebDAVAuth(c *gin.Context) {
 	// check count of login
-	ip := c.ClientIP()
+	ip := abuse.IPFromGin(c)
 	guest, _ := op.GetGuest()
 	count, cok := model.LoginCache.Get(ip)
 	if cok && count >= model.DefaultMaxAuthRetries {
+		abuse.OnProtocolAuthLockout(ip, "webdav")
 		if c.Request.Method == "OPTIONS" {
 			common.GinAppendValues(c, conf.UserKey, guest)
 			c.Next()
@@ -101,6 +103,9 @@ func WebDAVAuth(c *gin.Context) {
 			return
 		}
 		model.LoginCache.Set(ip, count+1)
+		if count+1 >= model.DefaultMaxAuthRetries {
+			abuse.OnProtocolAuthLockout(ip, "webdav")
+		}
 		c.Status(http.StatusUnauthorized)
 		c.Abort()
 		return

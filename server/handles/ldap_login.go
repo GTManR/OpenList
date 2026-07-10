@@ -1,6 +1,7 @@
 package handles
 
 import (
+	"github.com/OpenListTeam/OpenList/v4/internal/abuse"
 	"github.com/OpenListTeam/OpenList/v4/internal/conf"
 	"github.com/OpenListTeam/OpenList/v4/internal/model"
 	"github.com/OpenListTeam/OpenList/v4/internal/op"
@@ -24,9 +25,10 @@ func LoginLdap(c *gin.Context) {
 
 	// check count of login first (cheap, local) so an already-locked-out IP
 	// can't be used to flood the remote Turnstile siteverify API.
-	ip := c.ClientIP()
+	ip := abuse.IPFromGin(c)
 	count, ok := model.LoginCache.Get(ip)
 	if ok && count >= model.DefaultMaxAuthRetries {
+		abuse.OnAuthLockout(ip, "ldap_login")
 		common.ErrorStrResp(c, "Too many unsuccessful sign-in attempts have been made using an incorrect username or password, Try again later.", 429)
 		model.LoginCache.Expire(ip, model.DefaultLockDuration)
 		return
@@ -44,6 +46,9 @@ func LoginLdap(c *gin.Context) {
 	if err != nil {
 		if errors.Is(err, common.ErrFailedLdapAuth) {
 			model.LoginCache.Set(ip, count+1)
+			if count+1 >= model.DefaultMaxAuthRetries {
+				abuse.OnAuthLockout(ip, "ldap_login")
+			}
 			common.ErrorResp(c, err, 400)
 		} else {
 			common.ErrorResp(c, err, 500)
@@ -56,6 +61,9 @@ func LoginLdap(c *gin.Context) {
 		if err != nil {
 			common.ErrorResp(c, err, 400)
 			model.LoginCache.Set(ip, count+1)
+			if count+1 >= model.DefaultMaxAuthRetries {
+				abuse.OnAuthLockout(ip, "ldap_login")
+			}
 			return
 		}
 	}

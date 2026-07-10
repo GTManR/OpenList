@@ -251,6 +251,27 @@ func InitialSettings() []model.SettingItem {
 		{Key: conf.StreamMaxClientUploadSpeed, Value: "-1", Type: conf.TypeNumber, Group: model.TRAFFIC, Flag: model.PRIVATE},
 		{Key: conf.StreamMaxServerDownloadSpeed, Value: "-1", Type: conf.TypeNumber, Group: model.TRAFFIC, Flag: model.PRIVATE},
 		{Key: conf.StreamMaxServerUploadSpeed, Value: "-1", Type: conf.TypeNumber, Group: model.TRAFFIC, Flag: model.PRIVATE},
+
+		// Cloudflare abuse auto-ban (conservative defaults; see internal/abuse)
+		{Key: conf.CFAbuseEnabled, Value: "false", Type: conf.TypeBool, Group: model.SECURITY, Flag: model.PRIVATE, Help: "Enable auto-ban via Cloudflare account IP list. Requires cf_account_id, cf_list_id, cf_api_token. Env: CF_ABUSE_ENABLED, CF_ACCOUNT_ID, CF_LIST_ID, CF_API_TOKEN."},
+		{Key: conf.CFAccountID, Value: "", Type: conf.TypeString, Group: model.SECURITY, Flag: model.PRIVATE, Help: "Cloudflare account ID for Lists API."},
+		{Key: conf.CFZoneID, Value: "", Type: conf.TypeString, Group: model.SECURITY, Flag: model.PRIVATE, Help: "Optional Cloudflare zone ID (informational; WAF rule is configured on CF side)."},
+		{Key: conf.CFListID, Value: "", Type: conf.TypeString, Group: model.SECURITY, Flag: model.PRIVATE, Help: "Cloudflare account-level IP list ID (e.g. openlist_ip_blocklist)."},
+		{Key: conf.CFAPIToken, Value: "", Type: conf.TypeString, Group: model.SECURITY, Flag: model.PRIVATE, Help: "Cloudflare API token with Account.Filter Lists Edit permission."},
+		{Key: conf.AbuseInvalidSignThreshold, Value: "10", Type: conf.TypeNumber, Group: model.SECURITY, Flag: model.PRIVATE, Help: "A1/A3: invalid sign attempts before ban (default 10 in 5 min)."},
+		{Key: conf.AbuseInvalidSignWindowSec, Value: "300", Type: conf.TypeNumber, Group: model.SECURITY, Flag: model.PRIVATE, Help: "A1/A3 sliding window in seconds (default 300)."},
+		{Key: conf.AbuseMissingSignThreshold, Value: "10", Type: conf.TypeNumber, Group: model.SECURITY, Flag: model.PRIVATE, Help: "A2: missing sign attempts before ban (default 10 in 5 min)."},
+		{Key: conf.AbuseMissingSignWindowSec, Value: "300", Type: conf.TypeNumber, Group: model.SECURITY, Flag: model.PRIVATE, Help: "A2 sliding window in seconds (default 300)."},
+		{Key: conf.AbuseTurnstileFailThreshold, Value: "10", Type: conf.TypeNumber, Group: model.SECURITY, Flag: model.PRIVATE, Help: "A5: Turnstile verify failures before ban (default 10 in 5 min)."},
+		{Key: conf.AbuseTurnstileFailWindowSec, Value: "300", Type: conf.TypeNumber, Group: model.SECURITY, Flag: model.PRIVATE, Help: "A5 sliding window in seconds (default 300)."},
+		{Key: conf.AbuseWrongSharePwdThreshold, Value: "20", Type: conf.TypeNumber, Group: model.SECURITY, Flag: model.PRIVATE, Help: "A6: wrong share password attempts before ban (default 20 in 5 min)."},
+		{Key: conf.AbuseWrongSharePwdWindowSec, Value: "300", Type: conf.TypeNumber, Group: model.SECURITY, Flag: model.PRIVATE, Help: "A6 sliding window in seconds (default 300)."},
+		{Key: conf.AbuseHighFreqDownloadThreshold, Value: "30", Type: conf.TypeNumber, Group: model.SECURITY, Flag: model.PRIVATE, Help: "B1: successful /d/,/p/,/ad/,/ap/ downloads before permanent ban (default 30 in 1 min)."},
+		{Key: conf.AbuseHighFreqDownloadWindowSec, Value: "60", Type: conf.TypeNumber, Group: model.SECURITY, Flag: model.PRIVATE, Help: "B1 sliding window in seconds (default 60)."},
+		{Key: conf.AbuseScanThreshold, Value: "50", Type: conf.TypeNumber, Group: model.SECURITY, Flag: model.PRIVATE, Help: "B2: non-static 404/500 responses before ban (default 50 in 5 min)."},
+		{Key: conf.AbuseScanWindowSec, Value: "300", Type: conf.TypeNumber, Group: model.SECURITY, Flag: model.PRIVATE, Help: "B2 sliding window in seconds (default 300)."},
+		{Key: conf.AbuseGuestDisabledThreshold, Value: "20", Type: conf.TypeNumber, Group: model.SECURITY, Flag: model.PRIVATE, Help: "B4: guest-disabled 401 responses before ban (default 20 in 5 min)."},
+		{Key: conf.AbuseGuestDisabledWindowSec, Value: "300", Type: conf.TypeNumber, Group: model.SECURITY, Flag: model.PRIVATE, Help: "B4 sliding window in seconds (default 300)."},
 	}
 	additionalSettingItems := tool.Tools.Items()
 	// 固定顺序

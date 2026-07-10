@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/OpenListTeam/OpenList/v4/internal/abuse"
 	"github.com/OpenListTeam/OpenList/v4/internal/conf"
 	"github.com/OpenListTeam/OpenList/v4/internal/driver"
 	"github.com/OpenListTeam/OpenList/v4/internal/errs"
@@ -325,6 +326,7 @@ func dealError(c *gin.Context, err error) bool {
 	} else if errors.Is(err, errs.InvalidSharing) {
 		common.ErrorStrResp(c, "the share has expired or is no longer valid", 500)
 	} else if errors.Is(err, errs.WrongShareCode) {
+		abuse.Record(abuse.IPFromGin(c), abuse.BehaviorWrongSharePwd)
 		common.ErrorResp(c, err, 403)
 	} else if errors.Is(err, errs.WrongArchivePassword) {
 		common.ErrorResp(c, err, 202)
@@ -342,6 +344,7 @@ func dealErrorPage(c *gin.Context, err error) bool {
 	} else if errors.Is(err, errs.InvalidSharing) {
 		common.ErrorPage(c, errors.New("the share has expired or is no longer valid"), 500)
 	} else if errors.Is(err, errs.WrongShareCode) {
+		abuse.Record(abuse.IPFromGin(c), abuse.BehaviorWrongSharePwd)
 		common.ErrorPage(c, err, 403)
 	} else if errors.Is(err, errs.WrongArchivePassword) {
 		common.ErrorPage(c, err, 202)
