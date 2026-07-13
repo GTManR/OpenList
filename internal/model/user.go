@@ -28,6 +28,7 @@ const (
 	TooManyAttempts           = "Too many unsuccessful sign-in attempts have been made using an incorrect username or password, Try again later."
 	GuestCannotUpdateProfile  = "Guest user can not update profile"
 	GuestCannotGenerate2FA    = "Guest user can not generate 2FA code"
+	GuestCannotUpdatePrefs    = "Guest user can not update preferences"
 	TooManyPasswordAttempts   = "密码错误次数过多，请先完成验证码验证"
 )
 
@@ -83,6 +84,7 @@ type User struct {
 	OtpSecret  string `json:"-"`
 	SsoID      string `json:"sso_id"` // unique by sso platform
 	Authn      string `gorm:"type:text" json:"-"`
+	Prefs      string `gorm:"type:text" json:"-"`
 	AllowLdap  bool   `json:"allow_ldap" gorm:"default:true"`
 }
 

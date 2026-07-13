@@ -127,7 +127,10 @@ func loginHash(c *gin.Context, req *LoginReq) {
 
 type UserResp struct {
 	model.User
-	Otp bool `json:"otp"`
+	Otp   bool `json:"otp"`
+	Prefs struct {
+		LastWatched map[string]string `json:"last_watched,omitempty"`
+	} `json:"prefs"`
 }
 
 // CurrentUser get current user by token
@@ -141,6 +144,7 @@ func CurrentUser(c *gin.Context) {
 	if userResp.OtpSecret != "" {
 		userResp.Otp = true
 	}
+	userResp.Prefs.LastWatched = user.LastWatchedMap()
 	common.SuccessResp(c, userResp)
 }
 
@@ -231,4 +235,34 @@ func LogOut(c *gin.Context) {
 	} else {
 		common.SuccessResp(c)
 	}
+}
+
+type LastWatchedReq struct {
+	Folder string `json:"folder" binding:"required"`
+	File   string `json:"file" binding:"required"`
+}
+
+// UpdateLastWatched records the last watched file for a folder on the current user account.
+func UpdateLastWatched(c *gin.Context) {
+	var req LastWatchedReq
+	if err := c.ShouldBind(&req); err != nil {
+		common.ErrorResp(c, err, 400)
+		return
+	}
+	user := c.Request.Context().Value(conf.UserKey).(*model.User)
+	if user.IsGuest() {
+		common.ErrorStrResp(c, model.GuestCannotUpdatePrefs, 403)
+		return
+	}
+	if err := user.SetLastWatched(req.Folder, req.File); err != nil {
+		common.ErrorResp(c, err, 500)
+		return
+	}
+	if err := op.UpdateUser(user); err != nil {
+		common.ErrorResp(c, err, 500)
+		return
+	}
+	common.SuccessResp(c, gin.H{
+		"last_watched": user.LastWatchedMap(),
+	})
 }
