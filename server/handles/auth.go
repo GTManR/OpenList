@@ -46,6 +46,10 @@ func verifyTurnstile(c *gin.Context, req *LoginReq, ip string, count int) bool {
 	if !common.TurnstileRequired() {
 		return true
 	}
+	// Intranet / allowlisted TCP peers may skip Turnstile (RemoteAddr only).
+	if common.CanBypassTurnstile(c) {
+		return true
+	}
 	// Require a fresh Turnstile token on every login request, including the
 	// 2FA second step (the frontend keeps the widget alive and issues a new
 	// token for it). Returning a uniform 400 when the token is missing avoids

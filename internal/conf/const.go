@@ -128,8 +128,10 @@ const (
 	LdapLoginTips         = "ldap_login_tips"
 
 	// turnstile
-	TurnstileSiteKey   = "turnstile_site_key"
-	TurnstileSecretKey = "turnstile_secret_key"
+	TurnstileSiteKey                 = "turnstile_site_key"
+	TurnstileSecretKey               = "turnstile_secret_key"
+	TurnstileBypassPrivateNetworks   = "turnstile_bypass_private_networks"
+	TurnstileBypassCIDRs             = "turnstile_bypass_cidrs"
 
 	// s3
 	S3Buckets         = "s3_buckets"

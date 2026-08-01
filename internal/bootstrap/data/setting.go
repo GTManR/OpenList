@@ -182,6 +182,8 @@ func InitialSettings() []model.SettingItem {
 		{Key: conf.WebauthnLoginEnabled, Value: "false", Type: conf.TypeBool, Group: model.GLOBAL, Flag: model.PUBLIC},
 		{Key: conf.TurnstileSiteKey, Value: "", Type: conf.TypeString, Group: model.GLOBAL, Flag: model.PUBLIC},
 		{Key: conf.TurnstileSecretKey, Value: "", Type: conf.TypeString, Group: model.GLOBAL, Flag: model.PRIVATE},
+		{Key: conf.TurnstileBypassPrivateNetworks, Value: "true", Type: conf.TypeBool, Group: model.GLOBAL, Flag: model.PRIVATE, Help: "Skip Turnstile on login when the TCP peer (RemoteAddr) is a private/loopback IP. Does not trust CF-Connecting-IP / X-Forwarded-For."},
+		{Key: conf.TurnstileBypassCIDRs, Value: "", Type: conf.TypeText, Group: model.GLOBAL, Flag: model.PRIVATE, Help: "Optional CIDR allowlist (comma/newline separated). When set, only these peer CIDRs may skip Turnstile (stricter than all private ranges)."},
 		{Key: conf.SharePreview, Value: "false", Type: conf.TypeBool, Group: model.GLOBAL, Flag: model.PUBLIC},
 		{Key: conf.ShareArchivePreview, Value: "false", Type: conf.TypeBool, Group: model.GLOBAL, Flag: model.PUBLIC},
 		{Key: conf.ShareForceProxy, Value: "true", Type: conf.TypeBool, Group: model.GLOBAL, Flag: model.PRIVATE},

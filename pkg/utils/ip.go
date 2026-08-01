@@ -46,6 +46,55 @@ func ClientIPFromAddr(addr string) string {
 	return parseIP(addr)
 }
 
+// PeerIP returns the TCP peer address from RemoteAddr only.
+// It ignores CF-Connecting-IP / X-Forwarded-For so callers cannot spoof
+// intranet identity for auth bypass decisions.
+func PeerIP(r *http.Request) string {
+	if r == nil {
+		return ""
+	}
+	return ClientIPFromAddr(r.RemoteAddr)
+}
+
+// IPInCIDRs reports whether ipStr falls in any of the given CIDR networks.
+func IPInCIDRs(ipStr string, cidrs []*net.IPNet) bool {
+	ip := net.ParseIP(strings.TrimSpace(ipStr))
+	if ip == nil {
+		return false
+	}
+	for _, n := range cidrs {
+		if n != nil && n.Contains(ip) {
+			return true
+		}
+	}
+	return false
+}
+
+// ParseCIDRList parses a comma / newline / space separated CIDR list.
+// Invalid entries are skipped.
+func ParseCIDRList(raw string) []*net.IPNet {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil
+	}
+	fields := strings.FieldsFunc(raw, func(r rune) bool {
+		return r == ',' || r == '\n' || r == '\r' || r == ';' || r == ' ' || r == '\t'
+	})
+	out := make([]*net.IPNet, 0, len(fields))
+	for _, f := range fields {
+		f = strings.TrimSpace(f)
+		if f == "" {
+			continue
+		}
+		_, network, err := net.ParseCIDR(f)
+		if err != nil {
+			continue
+		}
+		out = append(out, network)
+	}
+	return out
+}
+
 func parseIP(ip string) string {
 	ip = strings.TrimSpace(ip)
 	if ip == "" {
@@ -60,6 +109,18 @@ func parseIP(ip string) string {
 
 func IsLocalIPAddr(ip string) bool {
 	return IsLocalIP(net.ParseIP(ip))
+}
+
+// ShouldBypassTurnstile decides intranet Turnstile skip from peer IP + policy.
+// peer must be the TCP RemoteAddr IP (not spoofable proxy headers).
+func ShouldBypassTurnstile(peer string, enabled bool, cidrRaw string) bool {
+	if !enabled || peer == "" {
+		return false
+	}
+	if cidrs := ParseCIDRList(cidrRaw); len(cidrs) > 0 {
+		return IPInCIDRs(peer, cidrs)
+	}
+	return IsLocalIPAddr(peer)
 }
 
 func IsLocalIP(ip net.IP) bool {

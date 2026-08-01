@@ -7,9 +7,11 @@ import (
 	"github.com/OpenListTeam/OpenList/v4/internal/conf"
 	"github.com/OpenListTeam/OpenList/v4/internal/model"
 	"github.com/OpenListTeam/OpenList/v4/internal/setting"
+	"github.com/OpenListTeam/OpenList/v4/pkg/utils"
 	"github.com/OpenListTeam/go-cache"
 	"github.com/gin-gonic/gin"
 	"github.com/go-resty/resty/v2"
+	log "github.com/sirupsen/logrus"
 )
 
 const turnstileSiteVerifyURL = "https://challenges.cloudflare.com/turnstile/v0/siteverify"
@@ -22,6 +24,30 @@ type turnstileVerifyResponse struct {
 
 func TurnstileRequired() bool {
 	return setting.GetStr(conf.TurnstileSecretKey) != ""
+}
+
+// CanBypassTurnstile reports whether this request may skip Turnstile on login.
+// Decision uses the TCP peer RemoteAddr only (never CF-Connecting-IP / XFF).
+//
+// Rules when turnstile_bypass_private_networks is enabled:
+//   - If turnstile_bypass_cidrs is non-empty: peer must match one of those CIDRs.
+//   - Otherwise: peer must be loopback / private / link-local.
+func CanBypassTurnstile(c *gin.Context) bool {
+	if c == nil {
+		return false
+	}
+	peer := utils.PeerIP(c.Request)
+	// Default true when unset so a fresh deploy matches InitialSettings before the row is read.
+	enabled := setting.GetStr(conf.TurnstileBypassPrivateNetworks, "true")
+	ok := utils.ShouldBypassTurnstile(
+		peer,
+		enabled == "true" || enabled == "1",
+		setting.GetStr(conf.TurnstileBypassCIDRs),
+	)
+	if ok {
+		log.Infof("[auth] turnstile bypass peer=%s", peer)
+	}
+	return ok
 }
 
 func VerifyTurnstileToken(token, remoteIP string) bool {
