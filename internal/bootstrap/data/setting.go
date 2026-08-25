@@ -247,12 +247,15 @@ func InitialSettings() []model.SettingItem {
 		{Key: conf.TaskOfflineDownloadTransferThreadsNum, Value: strconv.Itoa(conf.Conf.Tasks.Transfer.Workers), Type: conf.TypeNumber, Group: model.TRAFFIC, Flag: model.PRIVATE},
 		{Key: conf.TaskUploadThreadsNum, Value: strconv.Itoa(conf.Conf.Tasks.Upload.Workers), Type: conf.TypeNumber, Group: model.TRAFFIC, Flag: model.PRIVATE},
 		{Key: conf.TaskCopyThreadsNum, Value: strconv.Itoa(conf.Conf.Tasks.Copy.Workers), Type: conf.TypeNumber, Group: model.TRAFFIC, Flag: model.PRIVATE},
+		{Key: conf.TaskMoveThreadsNum, Value: strconv.Itoa(conf.Conf.Tasks.Move.Workers), Type: conf.TypeNumber, Group: model.TRAFFIC, Flag: model.PRIVATE},
 		{Key: conf.TaskDecompressDownloadThreadsNum, Value: strconv.Itoa(conf.Conf.Tasks.Decompress.Workers), Type: conf.TypeNumber, Group: model.TRAFFIC, Flag: model.PRIVATE},
 		{Key: conf.TaskDecompressUploadThreadsNum, Value: strconv.Itoa(conf.Conf.Tasks.DecompressUpload.Workers), Type: conf.TypeNumber, Group: model.TRAFFIC, Flag: model.PRIVATE},
 		{Key: conf.StreamMaxClientDownloadSpeed, Value: "-1", Type: conf.TypeNumber, Group: model.TRAFFIC, Flag: model.PRIVATE},
 		{Key: conf.StreamMaxClientUploadSpeed, Value: "-1", Type: conf.TypeNumber, Group: model.TRAFFIC, Flag: model.PRIVATE},
 		{Key: conf.StreamMaxServerDownloadSpeed, Value: "-1", Type: conf.TypeNumber, Group: model.TRAFFIC, Flag: model.PRIVATE},
 		{Key: conf.StreamMaxServerUploadSpeed, Value: "-1", Type: conf.TypeNumber, Group: model.TRAFFIC, Flag: model.PRIVATE},
+		{Key: conf.MultipartEnabled, Value: "true", Type: conf.TypeBool, Group: model.TRAFFIC, Flag: model.PUBLIC},
+		{Key: conf.MultipartChunkSize, Value: "10", Type: conf.TypeNumber, Group: model.TRAFFIC, Flag: model.PUBLIC, Help: `chunk size of multipart upload in MB (positive integer), keep it under your CDN's request body limit; each active session buffers up to 8 chunks on the server's disk`},
 
 		// Cloudflare abuse auto-ban (conservative defaults; see internal/abuse)
 		{Key: conf.CFAbuseEnabled, Value: "false", Type: conf.TypeBool, Group: model.SECURITY, Flag: model.PRIVATE, Help: "Enable auto-ban via Cloudflare account IP list. Requires cf_account_id, cf_list_id, cf_api_token. Env: CF_ABUSE_ENABLED, CF_ACCOUNT_ID, CF_LIST_ID, CF_API_TOKEN."},
@@ -274,6 +277,7 @@ func InitialSettings() []model.SettingItem {
 		{Key: conf.AbuseScanWindowSec, Value: "300", Type: conf.TypeNumber, Group: model.SECURITY, Flag: model.PRIVATE, Help: "B2 sliding window in seconds (default 300)."},
 		{Key: conf.AbuseGuestDisabledThreshold, Value: "20", Type: conf.TypeNumber, Group: model.SECURITY, Flag: model.PRIVATE, Help: "B4: guest-disabled 401 responses before ban (default 20 in 5 min)."},
 		{Key: conf.AbuseGuestDisabledWindowSec, Value: "300", Type: conf.TypeNumber, Group: model.SECURITY, Flag: model.PRIVATE, Help: "B4 sliding window in seconds (default 300)."},
+
 	}
 	additionalSettingItems := tool.Tools.Items()
 	// 固定顺序

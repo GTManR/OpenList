@@ -95,6 +95,9 @@ const (
 	// thunder_browser
 	ThunderBrowserTempDir = "thunder_browser_temp_dir"
 
+	// guangyapan
+	GuangYaPanTempDir = "guangyapan_temp_dir"
+
 	// single
 	Token         = "token"
 	IndexProgress = "index_progress"
@@ -167,6 +170,8 @@ const (
 	StreamMaxClientUploadSpeed            = "max_client_upload_speed"
 	StreamMaxServerDownloadSpeed          = "max_server_download_speed"
 	StreamMaxServerUploadSpeed            = "max_server_upload_speed"
+	MultipartEnabled                      = "multipart_enabled"
+	MultipartChunkSize                    = "multipart_chunk_size"
 
 	// Cloudflare abuse auto-ban (PRIVATE settings; env vars CF_* also supported)
 	CFAbuseEnabled = "cf_abuse_enabled"
@@ -176,20 +181,20 @@ const (
 	CFAPIToken     = "cf_api_token"
 
 	// Abuse thresholds (defaults documented in internal/abuse package)
-	AbuseInvalidSignThreshold       = "abuse_invalid_sign_threshold"
-	AbuseInvalidSignWindowSec       = "abuse_invalid_sign_window_sec"
-	AbuseMissingSignThreshold       = "abuse_missing_sign_threshold"
-	AbuseMissingSignWindowSec       = "abuse_missing_sign_window_sec"
-	AbuseTurnstileFailThreshold     = "abuse_turnstile_fail_threshold"
-	AbuseTurnstileFailWindowSec     = "abuse_turnstile_fail_window_sec"
-	AbuseWrongSharePwdThreshold     = "abuse_wrong_share_pwd_threshold"
-	AbuseWrongSharePwdWindowSec     = "abuse_wrong_share_pwd_window_sec"
-	AbuseHighFreqDownloadThreshold  = "abuse_high_freq_download_threshold"
-	AbuseHighFreqDownloadWindowSec  = "abuse_high_freq_download_window_sec"
-	AbuseScanThreshold              = "abuse_scan_threshold"
-	AbuseScanWindowSec              = "abuse_scan_window_sec"
-	AbuseGuestDisabledThreshold     = "abuse_guest_disabled_threshold"
-	AbuseGuestDisabledWindowSec     = "abuse_guest_disabled_window_sec"
+	AbuseInvalidSignThreshold      = "abuse_invalid_sign_threshold"
+	AbuseInvalidSignWindowSec      = "abuse_invalid_sign_window_sec"
+	AbuseMissingSignThreshold      = "abuse_missing_sign_threshold"
+	AbuseMissingSignWindowSec      = "abuse_missing_sign_window_sec"
+	AbuseTurnstileFailThreshold    = "abuse_turnstile_fail_threshold"
+	AbuseTurnstileFailWindowSec    = "abuse_turnstile_fail_window_sec"
+	AbuseWrongSharePwdThreshold    = "abuse_wrong_share_pwd_threshold"
+	AbuseWrongSharePwdWindowSec    = "abuse_wrong_share_pwd_window_sec"
+	AbuseHighFreqDownloadThreshold = "abuse_high_freq_download_threshold"
+	AbuseHighFreqDownloadWindowSec = "abuse_high_freq_download_window_sec"
+	AbuseScanThreshold             = "abuse_scan_threshold"
+	AbuseScanWindowSec             = "abuse_scan_window_sec"
+	AbuseGuestDisabledThreshold    = "abuse_guest_disabled_threshold"
+	AbuseGuestDisabledWindowSec    = "abuse_guest_disabled_window_sec"
 )
 
 const (

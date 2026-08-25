@@ -26,6 +26,7 @@ output/
 # vendor/
 /bin/*
 *.json
+!renovate.json
 /build
 /data/
 /tmp/
@@ -33,9 +34,10 @@ output/
 /lang/
 /daemon/
 /public/dist/*
-/!public/dist/README.md
+!/public/dist/README.md
 
 .VSCodeCounter
+*.syso
 
 # Local deploy / test environment (not part of upstream)
 .dockerignore

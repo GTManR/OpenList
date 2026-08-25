@@ -464,7 +464,7 @@ func UpdateSharing(c *gin.Context) {
 	for i, s := range req.Files {
 		s = utils.FixAndCleanPath(s)
 		req.Files[i] = s
-		if !reqUser.IsAdmin() && !strings.HasPrefix(s, user.BasePath) {
+		if !reqUser.IsAdmin() && !utils.IsSubPath(user.BasePath, s) {
 			common.ErrorStrResp(c, fmt.Sprintf("permission denied to share path [%s]", s), 500)
 			return
 		}
@@ -548,7 +548,7 @@ func CreateSharing(c *gin.Context) {
 	for i, s := range req.Files {
 		s = utils.FixAndCleanPath(s)
 		req.Files[i] = s
-		if !reqUser.IsAdmin() && !strings.HasPrefix(s, user.BasePath) {
+		if !reqUser.IsAdmin() && !utils.IsSubPath(user.BasePath, s) {
 			common.ErrorStrResp(c, fmt.Sprintf("permission denied to share path [%s]", s), 500)
 			return
 		}
